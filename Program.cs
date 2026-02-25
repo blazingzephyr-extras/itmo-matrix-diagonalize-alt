@@ -54,7 +54,63 @@ internal partial class Program
                 .Add(inverse);
         }
 
+        Console.WriteLine("// 0. Характеристическое уравнение:");
+        var builder = new System.Text.StringBuilder();
+        for (int i = 0; i < alphas.Length; i++)
+        {
+            builder.Append($"{alphas[i]}*L^({rang - i}) + ");
+        }
+
+        Console.Write(builder.Remove(builder.Length - 3, 3));
+        Console.WriteLine(" = 0");
+        Console.WriteLine();
+
+        Console.WriteLine("// 1. Обратная матрица");
         Console.WriteLine(inverse.Print());
         Console.WriteLine($"* ({Math.Pow(-1, rang)}) / {alphas[rang]}");
+
+        Console.WriteLine();
+        Console.WriteLine("// 2. Введите степень, в которую необходимо возвести матрицу");
+
+        string? nextLine = Console.ReadLine();
+        if (nextLine is null) return;
+
+        // Пропускаем первый коэффициент.
+        // На самом деле, возможно он и не нужен в I части.
+        alphas = [..alphas.Skip(1)];
+        double[] c = [..alphas];
+
+        int pow = int.Parse(nextLine);
+        for (int i = 0; i < pow - rang; i++)
+        {
+            double[] t = new double[rang];
+
+            // Было неправильно: t[rang - 1] = alphas[0] * c[rang - 1];
+            //
+            // Здесь отсутствует умножение коэффициентов на -1, так что мб. ошибка в том, что берём
+            // их отрицательными?
+            t[rang - 1] = alphas[rang - 1] * c[0];
+
+            for (int j = 0; j < rang - 1; j++)
+            {
+                t[j] = alphas[j] * c[0] + c[j + 1];
+                Console.WriteLine($"c[{j}] = {alphas[j]} * {c[0]} + {c[j + 1]} = {t[j]}");
+            }
+
+            Console.WriteLine($"c[{rang - 1}] = {alphas[0]} * {c[rang - 1]} = {t[rang - 1]}");
+            Console.WriteLine();
+
+            c = t;
+        }
+
+        double[,] result = Matrix.Zero<double>(A0.I());
+        for (int i = 0; i < rang; i++)
+        {
+            result = Matrix.Add(result,
+                                Matrix.Power(A0, rang - i - 1)
+                                    .Scalar(c[i]));
+        }
+
+        Console.WriteLine(result.Print());
     }
 }
