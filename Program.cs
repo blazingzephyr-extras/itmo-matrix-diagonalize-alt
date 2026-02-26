@@ -24,7 +24,13 @@ internal partial class Program
 
         // Не до конца уверен, почему здесь всегда -1.
         // Дальше тоже нужно разобраться, почему так.
-        alphas[0] = -1;
+        //
+        // Edit 26.02:
+        // Предыдущая версия:
+        // alphas[0] = -1
+        // alphas[rang] = A0.DetTri();
+        //
+        alphas[0] = Math.Pow(-1, rang);
         alphas[rang] = A0.DetTri();
 
         // A_1 = A
@@ -40,8 +46,10 @@ internal partial class Program
                                 .Scalar(-alpha)
                                 .Add(A);
 
-            A = A.Product(B);
-            alphas[n] = alpha;
+            // Edit 26.02:
+            // Исправлена ошибка, было: A = A.Product(B);
+            A = A0.Product(B);
+            alphas[n] = Math.Pow(-1.0, rang - 1) * alpha;
         }
 
         // Находим по формуле обратную матрицу.
@@ -67,7 +75,7 @@ internal partial class Program
 
         Console.WriteLine("// 1. Обратная матрица");
         Console.WriteLine(inverse.Print());
-        Console.WriteLine($"* ({Math.Pow(-1, rang)}) / {alphas[rang]}");
+        Console.WriteLine($"* 1 / {Math.Pow(-1, rang) * Math.Pow(-1, rang - 1) * alphas[rang]}");
 
         Console.WriteLine();
         Console.WriteLine("// 2. Введите степень, в которую необходимо возвести матрицу");
@@ -75,29 +83,22 @@ internal partial class Program
         string? nextLine = Console.ReadLine();
         if (nextLine is null) return;
 
-        // Пропускаем первый коэффициент.
-        // На самом деле, возможно он и не нужен в I части.
-        alphas = [..alphas.Skip(1)];
         double[] c = [..alphas];
 
         int pow = int.Parse(nextLine);
         for (int i = 0; i < pow - rang; i++)
         {
-            double[] t = new double[rang];
+            double[] t = new double[rang + 1];
 
-            // Было неправильно: t[rang - 1] = alphas[0] * c[rang - 1];
-            //
-            // Здесь отсутствует умножение коэффициентов на -1, так что мб. ошибка в том, что берём
-            // их отрицательными?
-            t[rang - 1] = alphas[rang - 1] * c[0];
+            t[rang] = -alphas[0] * alphas[rang] * c[1];
 
-            for (int j = 0; j < rang - 1; j++)
+            for (int j = 1; j < rang; j++)
             {
-                t[j] = alphas[j] * c[0] + c[j + 1];
-                Console.WriteLine($"c[{j}] = {alphas[j]} * {c[0]} + {c[j + 1]} = {t[j]}");
+                t[j] = -alphas[0] * alphas[j] * c[1] + c[j + 1];
+                Console.WriteLine($"c[{j}] = {-alphas[0]} * {alphas[j]} * {c[1]} + {c[j + 1]} = {t[j]}");
             }
 
-            Console.WriteLine($"c[{rang - 1}] = {alphas[0]} * {c[rang - 1]} = {t[rang - 1]}");
+            Console.WriteLine($"c[{rang}] = {-alphas[0]} * {alphas[rang]} * {c[1]} = {t[rang]}");
             Console.WriteLine();
 
             c = t;
@@ -108,9 +109,9 @@ internal partial class Program
         {
             result = Matrix.Add(result,
                                 Matrix.Power(A0, rang - i - 1)
-                                    .Scalar(c[i]));
+                                    .Scalar(c[i + 1]));
         }
 
-        Console.WriteLine(result.Print());
+        Console.WriteLine(result.Scalar(alphas[0] * -1).Print());
     }
 }
